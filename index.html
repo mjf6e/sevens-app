@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sevens — Exercise library &amp; interval trainer</title>
+<style>
+  :root{
+    --navy:#232D4B; --orange:#E57200; --cream:#F1F1EF; --line:#DADADA;
+    --ink:#3a4055; --sub:#666666; --card:#FFFFFF; --tan:#F9DCBF;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--cream);
+    font-family:-apple-system,"Segoe UI",system-ui,sans-serif;color:var(--navy)}
+  h1,h2,h3,.serif{font-family:Georgia,"Times New Roman",serif}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+  img{-webkit-user-drag:none}
+
+  #shell{min-height:100vh;max-width:900px;margin:0 auto;background:var(--cream);
+    display:flex;flex-direction:column;position:relative;box-shadow:0 0 0 1px var(--line)}
+  @media (min-width:901px){
+    body{padding:24px 0}
+    #shell{min-height:calc(100vh - 48px);border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(0,0,0,.08),0 12px 32px rgba(35,45,75,.12)}
+  }
+
+  #screen{flex:1;overflow-y:auto;padding:18px 18px 8px}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--orange)}
+  .title{font-size:23px;line-height:1.15;margin:8px 0 6px;text-wrap:pretty}
+  .body-sm{font-size:12.5px;line-height:1.6;color:var(--ink)}
+  .back{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--sub);cursor:pointer;margin-bottom:14px}
+  .back:hover{color:var(--navy)}
+
+  /* ── Browse ─────────────────────────────────────────────────────────── */
+  .search{width:100%;height:42px;border:1px solid var(--line);border-radius:6px;padding:0 14px;
+    font-size:14px;background:#fff;color:var(--navy)}
+  .search::placeholder{color:#999}
+  .filters-bar{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .chip{padding:6px 12px;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    cursor:pointer;border-radius:20px;white-space:nowrap}
+  .chip.on{background:var(--navy);color:#fff}
+  .chip.off{background:#fff;border:1px solid var(--line);color:var(--sub)}
+  .chip.off:hover{border-color:var(--navy);color:var(--navy)}
+  .sel-row{display:flex;gap:8px;margin:8px 0 4px;flex-wrap:wrap}
+  select.mini{height:32px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--navy);
+    font-size:11px;padding:0 8px;max-width:47%}
+  .count-line{font-size:11px;color:var(--sub);margin:10px 0 2px}
+
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px}
+  @media (min-width:520px){.grid{grid-template-columns:repeat(3,1fr)}}
+  @media (min-width:760px){.grid{grid-template-columns:repeat(4,1fr)}}
+  .gcard{background:#fff;border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;
+    display:flex;flex-direction:column}
+  .gcard:hover{border-color:var(--navy)}
+  .gphoto{position:relative;width:100%;aspect-ratio:4/3;background:#eceae5;overflow:hidden}
+  .gphoto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .gphoto .noimg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:#b7b4ab;font-size:22px}
+  .gcard .added-badge{position:absolute;top:5px;right:5px;background:var(--orange);color:#fff;
+    width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
+  .gname{font-size:11.5px;line-height:1.35;padding:7px 8px 4px;font-weight:600}
+  .gmeta{font-size:8.5px;color:var(--sub);padding:0 8px 8px;text-transform:uppercase;letter-spacing:.06em}
+  .load-more{display:block;width:100%;margin:16px 0 6px;height:42px;border-radius:6px;border:1px solid var(--line);
+    background:#fff;color:var(--navy);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+  .load-more:hover{border-color:var(--navy)}
+  .empty-note{padding:30px 10px;text-align:center;color:var(--sub);font-size:13px}
+
+  .quickstrip{display:flex;gap:10px;margin:10px 0 4px;overflow-x:auto;padding-bottom:4px}
+  .qcard{flex:0 0 auto;width:150px;background:var(--navy);color:#fff;border-radius:8px;padding:12px 13px;cursor:pointer}
+  .qcard:hover{background:#2c3860}
+  .qcard .qtag{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--tan)}
+  .qcard .qname{font-family:Georgia,serif;font-size:14.5px;margin-top:6px;line-height:1.25}
+  .qcard .qmeta{font-size:9.5px;color:#C8CBD2;margin-top:6px}
+
+  /* ── Detail ─────────────────────────────────────────────────────────── */
+  .detail-photos{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+  .detail-photos.single{grid-template-columns:1fr}
+  .detail-photos .ph{position:relative;aspect-ratio:4/3;background:#eceae5;border-radius:6px;overflow:hidden}
+  .detail-photos .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .detail-photos .ph .cap{position:absolute;left:6px;bottom:6px;font-size:8.5px;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.45);padding:2px 7px;border-radius:10px}
+  .detail-gif{width:100%;aspect-ratio:4/3;background:#fff;border:1px solid var(--line);border-radius:6px;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;margin-top:6px}
+  .detail-gif img{max-width:100%;max-height:100%}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+  .badge{display:inline-flex;align-items:center;padding:0 11px;height:24px;border-radius:20px;
+    font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+  .badge-neutral{background:var(--cream);color:var(--sub)}
+  .badge-soft{background:var(--tan);color:#7a4a10}
+  .muscle-block{margin-top:14px}
+  .muscle-lbl{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);margin-bottom:6px}
+  .mchip{display:inline-block;padding:4px 10px;margin:0 5px 5px 0;border-radius:14px;font-size:11px}
+  .mchip.pm{background:var(--navy);color:#fff}
+  .mchip.sm{background:var(--cream);color:var(--ink);border:1px solid var(--line)}
+  .instructions{margin-top:16px;padding:0;list-style:none;counter-reset:step}
+  .instructions li{counter-increment:step;position:relative;padding-left:30px;margin-bottom:12px;
+    font-size:13px;line-height:1.55;color:var(--ink)}
+  .instructions li::before{content:counter(step);position:absolute;left:0;top:0;width:20px;height:20px;
+    border-radius:50%;background:var(--navy);color:#fff;font-size:10px;font-weight:700;
+    display:flex;align-items:center;justify-content:center}
+  .no-ins{font-size:12.5px;color:var(--sub);font-style:italic;margin-top:10px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border:0;border-radius:4px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    cursor:pointer;padding:0 20px;height:48px;font-size:11px}
+  .btn-accent{background:var(--orange);color:#fff}
+  .btn-primary{background:var(--navy);color:#fff}
+  .btn-secondary{background:transparent;border:2px solid var(--line);color:var(--navy)}
+  .btn-ghost-dark{background:transparent;border:2px solid #C8CBD2;color:#F1F1EF}
+  .btn-danger{background:transparent;border:2px solid #c0392b;color:#c0392b}
+  .btn-block{width:100%}
+  .btn:hover{filter:brightness(1.06)}
+
+  /* ── Circuit / History / Settings (mostly unchanged) ─────────────────── */
+  .circuit-item{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .circuit-item .num{font-family:Georgia,serif;font-style:italic;color:#C8CBD2;width:20px;flex:0 0 auto}
+  .thumb-sm{width:56px;height:42px;flex:0 0 auto;background:#fff;border:1px solid var(--line);
+    position:relative;overflow:hidden;border-radius:2px}
+  .thumb-sm img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .circuit-item .info{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+  .circuit-item .name{font-family:Georgia,serif;font-size:14px}
+  .circuit-item .rm{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#c0392b;cursor:pointer}
+  .build-bar{position:sticky;bottom:0;background:var(--navy);padding:12px 16px;display:flex;align-items:center;gap:12px;
+    margin:14px -18px 0}
+  .build-bar .count{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--tan)}
+  .build-bar .time{font-size:12px;color:#C8CBD2}
+  .build-bar .clear{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C8CBD2;cursor:pointer}
+  .tip{margin-top:16px;background:var(--tan);border-left:4px solid var(--orange);padding:13px 15px;
+    display:flex;gap:10px;font-size:12px;line-height:1.55;color:var(--ink)}
+
+  .stat-row{display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff}
+  .stat{flex:1;padding:16px 14px}
+  .stat .num{font-size:28px;font-weight:200;line-height:1}
+  .stat .lbl{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);margin-top:5px}
+  .stat + .stat{border-left:1px solid var(--line)}
+  .hist-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 0;border-top:1px solid var(--line)}
+  .hist-row .name{font-family:Georgia,serif;font-size:14px}
+  .hist-row .meta{font-size:10.5px;color:var(--sub)}
+  .hist-row .time{font-size:14px;font-weight:300;font-variant-numeric:tabular-nums}
+
+  .setup-card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--navy);padding:16px 16px;border-radius:2px}
+  .setup-line{display:flex;align-items:baseline;justify-content:space-between}
+  .setup-lbl{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .setup-val{font-size:18px;font-weight:300;color:var(--orange);font-variant-numeric:tabular-nums}
+  .hr{height:1px;background:var(--line);margin:16px 0}
+  input[type=range]{width:100%;margin-top:12px;accent-color:var(--orange)}
+  .toggle-card{background:#fff;border:1px solid var(--line);padding:14px 16px;margin-top:10px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:2px}
+  .toggle{width:46px;height:26px;border-radius:14px;padding:2px;cursor:pointer;box-sizing:border-box}
+  .toggle .knob{width:22px;height:22px;background:#fff;border-radius:50%;transition:margin-left .15s}
+
+  .tabbar{flex:0 0 auto;background:#fff;border-top:1px solid var(--line);display:flex;
+    padding-bottom:env(safe-area-inset-bottom,0)}
+  .tab{flex:1;text-align:center;padding:11px 0 9px;cursor:pointer;font-size:8px;font-weight:700;
+    letter-spacing:.1em;text-transform:uppercase;color:#999;border-top:2px solid transparent;margin-top:-1px;
+    position:relative}
+  .tab.on{color:var(--navy);border-top-color:var(--orange)}
+  .tab:hover{color:var(--navy)}
+  .tab .dot{position:absolute;top:6px;right:calc(50% - 22px);width:7px;height:7px;border-radius:50%;background:var(--orange)}
+
+  /* ── Run / Rest / Done (unchanged from before) ────────────────────────── */
+  .demo{position:absolute;inset:0}
+  .demo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .demo .a{animation:fadeA 2.6s ease-in-out infinite}
+  .demo .b{animation:fadeB 2.6s ease-in-out infinite}
+  @keyframes fadeA{0%,100%{opacity:0}50%{opacity:1}}
+  @keyframes fadeB{0%,100%{opacity:1}50%{opacity:0}}
+  .demo.gif img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}
+  .demo.none{display:flex;align-items:center;justify-content:center;color:#b7b4ab;font-size:28px}
+
+  .run{min-height:100%;padding:26px 20px 20px;box-sizing:border-box;display:flex;flex-direction:column;
+    position:relative;overflow:hidden;flex:1}
+  .run.work{background:var(--navy);color:#fff}
+  .run.rest{background:var(--cream);color:var(--navy)}
+  .run-head{position:relative;display:flex;align-items:center;justify-content:space-between}
+  .run-bar{position:relative;height:3px;margin-top:12px}
+  .run-bar .track{position:absolute;inset:0;background:rgba(200,203,210,.28)}
+  .run.rest .run-bar .track{background:var(--line)}
+  .run-bar .fill{position:relative;height:3px;background:var(--orange)}
+  .run.rest .run-bar .fill{background:var(--navy)}
+  .move-name{position:relative;font-family:Georgia,serif;font-size:22px;line-height:1.15;margin-top:18px}
+  .move-cue{position:relative;font-size:12.5px;line-height:1.55;margin-top:6px;opacity:.85}
+  .run-thumb{position:relative;margin-top:14px;height:160px;background:#fff;border:1px solid rgba(200,203,210,.35);border-radius:2px;overflow:hidden}
+  .run-ring{position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:140px}
+  .run-ring .num{font-size:58px;font-weight:200;line-height:1;font-variant-numeric:tabular-nums}
+  .run-ring .lbl{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin-top:2px}
+  .run-actions{position:relative;display:flex;gap:10px;margin-top:6px}
+  .run-actions .btn{flex:1}
+  .next-name{font-family:Georgia,serif;font-size:20px;margin:8px 0 4px;text-wrap:pretty}
+  .done{min-height:100%;padding:30px 20px;box-sizing:border-box;display:flex;flex-direction:column;
+    justify-content:center;background:var(--navy);color:#fff;position:relative;overflow:hidden;flex:1}
+</style>
+</head>
+<body>
+<div id="shell"><div id="screen"></div><div id="tabbar"></div></div>
+
+<script src="exdata.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var CLASSIC_IDS = ['Star_Jump','extra-wall-sit','Pushups','Crunches','Step-up_with_Knee_Raise',
+    'Bodyweight_Squat','Bench_Dips','Plank','extra-high-knees','Bodyweight_Walking_Lunge',
+    'Push_Up_to_Side_Plank','Side_Bridge'];
+
+  var BY_ID = {}; EXDATA.forEach(function(e){ BY_ID[e.id] = e; });
+  function ex(id){ return BY_ID[id]; }
+
+  var CATS_LIST = uniqueSorted(EXDATA.map(function(e){return e.cat;}));
+  var EQ_LIST = uniqueSorted(EXDATA.map(function(e){return e.eq;}));
+  var LVL_LIST = uniqueSorted(EXDATA.map(function(e){return e.lvl;}));
+  var MUS_LIST = uniqueSorted(EXDATA.reduce(function(a,e){return a.concat(e.pm||[]);},[]));
+  function uniqueSorted(arr){
+    var s = {}; arr.forEach(function(v){ if(v) s[v]=1; });
+    return Object.keys(s).sort();
+  }
+  function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+
+  // ── State ────────────────────────────────────────────────────────────
+  var S = {
+    tab:'browse', screen:'tabs', detailId:null,
+    q:'', fCat:'', fEq:'', fLvl:'', fMus:'', limit:60,
+    circuit:[], custom:null, catRunning:null,
+    idx:0, phase:'lead', remaining:5, running:false, elapsed:0,
+    work:30, rest:10, lead:5, audio:true,
+    history:[]
+  };
+  (function loadSaved(){
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('sevens.v2') || 'null'); } catch(e){}
+    if (saved && typeof saved === 'object'){
+      S.work = saved.work || 30; S.rest = saved.rest !== undefined ? saved.rest : 10;
+      S.lead = saved.lead !== undefined ? saved.lead : 5;
+      S.audio = saved.audio !== false;
+      S.history = Array.isArray(saved.history) ? saved.history : [];
+      S.circuit = Array.isArray(saved.circuit) ? saved.circuit : [];
+    }
+  })();
+  function persist(){
+    try { localStorage.setItem('sevens.v2', JSON.stringify(
+      {work:S.work, rest:S.rest, lead:S.lead, audio:S.audio, history:S.history, circuit:S.circuit})); } catch(e){}
+  }
+
+  function circuitMoves(){
+    var ids = S.custom || S.circuit;
+    return ids.map(ex).filter(Boolean);
+  }
+  function fmt(t){ t = Math.max(0, Math.round(t)); var mm = Math.floor(t/60), ss = t%60;
+    return mm + ':' + (ss<10 ? '0'+ss : ss); }
+  function circuitSecs(n){ return n*S.work + Math.max(0,n-1)*S.rest; }
+  function streak(){
+    var days = {}; S.history.forEach(function(h){ days[new Date(h.ts).toDateString()] = true; });
+    var d = new Date();
+    if (!days[d.toDateString()]) d.setDate(d.getDate()-1);
+    var n = 0;
+    while (days[d.toDateString()]){ n++; d.setDate(d.getDate()-1); }
+    return n;
+  }
+
+  // ── Audio ────────────────────────────────────────────────────────────
+  var ac = null;
+  function beep(freq, dur){
+    if (!S.audio) return;
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ac = ac || new AC();
+      if (ac.state === 'suspended') ac.resume();
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine'; o.frequency.value = freq;
+      o.connect(g); g.connect(ac.destination);
+      var t = ac.currentTime;
+      g.gain.setValueAtTime(0.06, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + (dur||0.13));
+      o.start(t); o.stop(t + (dur||0.13) + 0.02);
+    }catch(e){}
+  }
+
+  // ── Timer ────────────────────────────────────────────────────────────
+  setInterval(function(){
+    if (S.screen !== 'run' || !S.running) return;
+    if (S.remaining > 1){
+      if (S.remaining <= 4) beep(620, 0.07);
+      S.remaining--; S.elapsed++;
+    } else { advance(true); }
+    render();
+  }, 1000);
+
+  function advance(counted){
+    var moves = S.custom ? S.custom.map(ex).filter(Boolean) : circuitMoves();
+    var bump = counted ? 1 : 0;
+    if (S.phase === 'lead'){ beep(880,0.18); S.phase='work'; S.remaining=S.work; S.elapsed+=bump; return; }
+    if (S.phase === 'work'){
+      if (S.idx >= moves.length-1){ beep(990,0.3); finish(S.elapsed+bump, moves.length); return; }
+      if (S.rest === 0){ beep(880,0.18); S.idx++; S.remaining=S.work; S.elapsed+=bump; return; }
+      beep(440,0.2); S.phase='rest'; S.remaining=S.rest; S.elapsed+=bump; return;
+    }
+    beep(880,0.18); S.phase='work'; S.idx++; S.remaining=S.work; S.elapsed+=bump;
+  }
+  function finish(elapsed, moveCount){
+    var entry = {ts:Date.now(), name:S.runName || 'Circuit', secs:elapsed, moves:moveCount};
+    S.history = [entry].concat(S.history).slice(0,40);
+    S.screen='done'; S.running=false; S.elapsed=elapsed;
+    persist(); render();
+  }
+  function startRun(ids, name){
+    var lead = S.lead > 0 ? S.lead : 0;
+    beep(660,0.1);
+    S.custom = ids.slice(); S.runName = name;
+    S.screen='run'; S.idx=0; S.phase = lead>0 ? 'lead':'work'; S.remaining = lead>0 ? lead : S.work;
+    S.running=true; S.elapsed=0;
+    render();
+  }
+
+  // ── Demo media ──────────────────────────────────────────────────────
+  function demoHtml(e){
+    if (!e) return '<div class="demo none">–</div>';
+    if (e.img === -1) return '<div class="demo gif"><img src="assets/gifs/'+e.id+'.gif" alt=""></div>';
+    if (e.img >= 2) return '<div class="demo"><img class="a" src="assets/photos/'+e.id+'-0.jpg" alt=""><img class="b" src="assets/photos/'+e.id+'-1.jpg" alt=""></div>';
+    if (e.img === 1) return '<div class="demo"><img src="assets/photos/'+e.id+'-0.jpg" alt=""></div>';
+    return '<div class="demo none">–</div>';
+  }
+
+  // ── Render shell ─────────────────────────────────────────────────────
+  function render(){
+    var screenEl = document.getElementById('screen');
+    var tabbarEl = document.getElementById('tabbar');
+
+    if (S.screen === 'tabs'){
+      screenEl.style.padding = '18px 18px 8px';
+      tabbarEl.style.display = '';
+      screenEl.innerHTML = renderTabs();
+      tabbarEl.innerHTML = renderTabbar();
+    } else if (S.screen === 'run'){
+      tabbarEl.style.display = 'none'; screenEl.style.padding = '0';
+      screenEl.innerHTML = renderRun();
+    } else if (S.screen === 'done'){
+      tabbarEl.style.display = 'none'; screenEl.style.padding = '0';
+      screenEl.innerHTML = renderDone();
+    }
+  }
+
+  function renderTabbar(){
+    var TABS = [
+      {id:'browse', label:'Browse'}, {id:'circuit', label:'Circuit', dot: S.circuit.length>0},
+      {id:'history', label:'Log'}, {id:'settings', label:'Setup'}
+    ];
+    return TABS.map(function(t){
+      return '<div class="tab '+(S.tab===t.id?'on':'')+'" onclick="app.setTab(\''+t.id+'\')">'+t.label+
+        (t.dot?'<span class="dot"></span>':'')+'</div>';
+    }).join('');
+  }
+
+  function renderTabs(){
+    if (S.tab === 'detail') return renderDetail();
+    if (S.tab === 'circuit') return renderCircuit();
+    if (S.tab === 'history') return renderHistory();
+    if (S.tab === 'settings') return renderSettings();
+    return renderBrowse();
+  }
+
+  // ── Browse ──────────────────────────────────────────────────────────
+  function filtered(){
+    var q = S.q.trim().toLowerCase();
+    return EXDATA.filter(function(e){
+      if (q && e.name.toLowerCase().indexOf(q) < 0) return false;
+      if (S.fCat && e.cat !== S.fCat) return false;
+      if (S.fEq && e.eq !== S.fEq) return false;
+      if (S.fLvl && e.lvl !== S.fLvl) return false;
+      if (S.fMus && (e.pm||[]).indexOf(S.fMus) < 0) return false;
+      return true;
+    });
+  }
+
+  function renderBrowse(){
+    var html = '';
+    html += '<div class="eyebrow">Sevens</div>';
+    html += '<h1 class="title">Exercise library</h1>';
+    html += '<div class="body-sm">'+EXDATA.length+' exercises from free-exercise-db (public domain), plus '+
+      EXDATA.filter(function(e){return e.extra;}).length+' original stick-figure moves for the handful this dataset doesn\'t cover. Search, filter, add to your circuit.</div>';
+
+    html += '<div class="quickstrip">';
+    html += '<div class="qcard" onclick="app.beginClassic()"><div class="qtag">Quick start</div>'+
+      '<div class="qname">The Classic Circuit</div>'+
+      '<div class="qmeta">12 moves · '+fmt(circuitSecsFor(CLASSIC_IDS.length))+'</div></div>';
+    html += '</div>';
+
+    html += '<input class="search" placeholder="Search exercises…" value="'+escAttr(S.q)+'" oninput="app.setQuery(this.value)">';
+    html += '<div class="sel-row">';
+    html += selectHtml('fCat', S.fCat, ['All categories'].concat(CATS_LIST.map(cap)), ['',''].concat(CATS_LIST).slice(0));
+    html += selectHtml('fEq', S.fEq, ['All equipment'].concat(EQ_LIST.map(cap)), [''].concat(EQ_LIST));
+    html += selectHtml('fLvl', S.fLvl, ['All levels'].concat(LVL_LIST.map(cap)), [''].concat(LVL_LIST));
+    html += selectHtml('fMus', S.fMus, ['All muscles'].concat(MUS_LIST.map(cap)), [''].concat(MUS_LIST));
+    html += '</div>';
+
+    var list = filtered();
+    html += '<div class="count-line">'+list.length+' match'+(list.length===1?'':'es')+'</div>';
+
+    if (list.length === 0){
+      html += '<div class="empty-note">Nothing matches those filters. Try clearing one.</div>';
+    } else {
+      var shown = list.slice(0, S.limit);
+      html += '<div class="grid">';
+      shown.forEach(function(e){
+        var inCircuit = S.circuit.indexOf(e.id) >= 0;
+        html += '<div class="gcard" onclick="app.openDetail(\''+e.id+'\')">'+
+          '<div class="gphoto">'+gridImg(e)+(inCircuit?'<div class="added-badge">✓</div>':'')+'</div>'+
+          '<div class="gname">'+e.name+'</div>'+
+          '<div class="gmeta">'+cap(e.eq||'—')+'</div></div>';
+      });
+      html += '</div>';
+      if (list.length > shown.length){
+        html += '<button class="load-more" onclick="app.loadMore()">Show more ('+(list.length-shown.length)+' left)</button>';
+      }
+    }
+    return html;
+  }
+  function circuitSecsFor(n){ return n*S.work + Math.max(0,n-1)*S.rest; }
+  function gridImg(e){
+    if (e.img === -1) return '<img src="assets/gifs/'+e.id+'.gif" loading="lazy" alt="">';
+    if (e.img >= 1) return '<img src="assets/photos/'+e.id+'-0.jpg" loading="lazy" alt="">';
+    return '<div class="noimg">–</div>';
+  }
+  function selectHtml(field, current, labels, values){
+    var opts = labels.map(function(lbl,i){
+      var v = values[i];
+      return '<option value="'+escAttr(v)+'" '+(v===current?'selected':'')+'>'+lbl+'</option>';
+    }).join('');
+    return '<select class="mini" onchange="app.setFilter(\''+field+'\', this.value)">'+opts+'</select>';
+  }
+  function escAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+
+  // ── Detail ──────────────────────────────────────────────────────────
+  function renderDetail(){
+    var e = ex(S.detailId);
+    if (!e) return '<div class="back" onclick="app.setTab(\'browse\')">← Browse</div><div class="empty-note">Not found.</div>';
+    var html = '<div class="back" onclick="app.setTab(\'browse\')">← Browse</div>';
+    if (e.img === -1){
+      html += '<div class="detail-gif"><img src="assets/gifs/'+e.id+'.gif" alt=""></div>';
+    } else if (e.img >= 2){
+      html += '<div class="detail-photos">'+
+        '<div class="ph"><img src="assets/photos/'+e.id+'-0.jpg" alt=""><div class="cap">Start</div></div>'+
+        '<div class="ph"><img src="assets/photos/'+e.id+'-1.jpg" alt=""><div class="cap">Finish</div></div></div>';
+    } else if (e.img === 1){
+      html += '<div class="detail-photos single"><div class="ph"><img src="assets/photos/'+e.id+'-0.jpg" alt=""></div></div>';
+    }
+    html += '<h1 class="title">'+e.name+'</h1>';
+    html += '<div class="badges">';
+    if (e.cat) html += '<span class="badge badge-neutral">'+cap(e.cat)+'</span>';
+    if (e.eq) html += '<span class="badge badge-neutral">'+cap(e.eq)+'</span>';
+    if (e.lvl) html += '<span class="badge badge-soft">'+cap(e.lvl)+'</span>';
+    if (e.force) html += '<span class="badge badge-neutral">'+cap(e.force)+'</span>';
+    html += '</div>';
+    if ((e.pm&&e.pm.length) || (e.sm&&e.sm.length)){
+      html += '<div class="muscle-block"><div class="muscle-lbl">Muscles worked</div>';
+      (e.pm||[]).forEach(function(m){ html += '<span class="mchip pm">'+cap(m)+'</span>'; });
+      (e.sm||[]).forEach(function(m){ html += '<span class="mchip sm">'+cap(m)+'</span>'; });
+      html += '</div>';
+    }
+    if (e.ins && e.ins.length){
+      html += '<ul class="instructions">'+e.ins.map(function(s){ return '<li>'+s+'</li>'; }).join('')+'</ul>';
+    } else {
+      html += '<div class="no-ins">No written instructions on file for this one.</div>';
+    }
+    var inCircuit = S.circuit.indexOf(e.id) >= 0;
+    html += '<div style="margin:18px 0 10px">';
+    html += inCircuit
+      ? '<button class="btn btn-danger btn-block" onclick="app.toggleCircuit(\''+e.id+'\')">Remove from circuit</button>'
+      : '<button class="btn btn-accent btn-block" onclick="app.toggleCircuit(\''+e.id+'\')">Add to circuit</button>';
+    html += '</div>';
+    return html;
+  }
+
+  // ── Circuit ─────────────────────────────────────────────────────────
+  function renderCircuit(){
+    var html = '';
+    html += '<div class="eyebrow">Circuit</div><h1 class="title">Your workout</h1>';
+    if (S.circuit.length === 0){
+      html += '<div class="body-sm">Nothing added yet. Browse the library and tap "Add to circuit" on any move.</div>';
+      html += '<div style="margin-top:14px"><button class="btn btn-secondary btn-block" onclick="app.setTab(\'browse\')">Go to Browse</button></div>';
+      return html;
+    }
+    html += '<div class="body-sm">'+S.circuit.length+' moves · '+fmt(circuitSecsFor(S.circuit.length))+' at your current intervals.</div>';
+    html += '<div style="margin-top:10px">';
+    S.circuit.forEach(function(id,i){
+      var e = ex(id); if (!e) return;
+      html += '<div class="circuit-item"><div class="num">'+(i+1)+'</div>'+
+        '<div class="thumb-sm">'+(e.img===-1?'<img src="assets/gifs/'+e.id+'.gif" alt="">':(e.img>=1?'<img src="assets/photos/'+e.id+'-0.jpg" alt="">':''))+'</div>'+
+        '<div class="info"><div class="name">'+e.name+'</div></div>'+
+        '<div class="rm" onclick="app.removeFromCircuit(\''+id+'\')">Remove</div></div>';
+    });
+    html += '</div>';
+    html += '<div class="build-bar"><div style="flex:1"><div class="count">'+S.circuit.length+' moves</div>'+
+      '<div class="time">'+fmt(circuitSecsFor(S.circuit.length))+' total</div></div>'+
+      '<div class="clear" onclick="app.clearCircuit()">Clear</div>'+
+      '<button class="btn btn-accent" style="height:38px" onclick="app.beginCircuit()">Start</button></div>';
+    return html;
+  }
+
+  // ── History / Settings (same as before) ────────────────────────────
+  function renderHistory(){
+    var st = streak();
+    var totalMin = Math.round(S.history.reduce(function(a,h){return a+(h.secs||0);},0)/60);
+    var html = '<div class="eyebrow">Log</div><h1 class="title">Your record</h1>';
+    html += '<div class="stat-row">'+
+      '<div class="stat"><div class="num">'+st+'</div><div class="lbl">Day streak</div></div>'+
+      '<div class="stat"><div class="num">'+S.history.length+'</div><div class="lbl">Sessions</div></div>'+
+      '<div class="stat"><div class="num">'+totalMin+'</div><div class="lbl">Minutes</div></div></div>';
+    if (S.history.length > 0){
+      html += '<div style="margin-top:22px"><div style="font-size:9.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--sub);padding-bottom:6px">Recent</div>';
+      S.history.slice(0,12).forEach(function(h){
+        var meta = new Date(h.ts).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})+' · '+h.moves+' moves';
+        html += '<div class="hist-row"><div><div class="name">'+h.name+'</div><div class="meta">'+meta+'</div></div>'+
+          '<div class="time">'+fmt(h.secs||0)+'</div></div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="tip" style="margin-top:20px"><div>★</div><div>Nothing logged yet. Finish a circuit and it lands here.</div></div>';
+    }
+    return html;
+  }
+
+  function renderSettings(){
+    var html = '<div class="eyebrow">Setup</div><h1 class="title">Intervals &amp; audio</h1>';
+    html += '<div class="setup-card">'+
+      '<div class="setup-line"><div class="setup-lbl">Work interval</div><div class="setup-val">'+S.work+'s</div></div>'+
+      '<input type="range" min="10" max="60" step="5" value="'+S.work+'" oninput="app.setWork(this.value)">'+
+      '<div class="hr"></div>'+
+      '<div class="setup-line"><div class="setup-lbl">Rest interval</div><div class="setup-val">'+S.rest+'s</div></div>'+
+      '<input type="range" min="0" max="30" step="5" value="'+S.rest+'" oninput="app.setRest(this.value)">'+
+      '<div class="hr"></div>'+
+      '<div class="setup-line"><div class="setup-lbl">Lead-in</div><div class="setup-val">'+(S.lead===0?'Off':S.lead+'s')+'</div></div>'+
+      '<input type="range" min="0" max="15" step="5" value="'+S.lead+'" oninput="app.setLead(this.value)">'+
+      '</div>';
+    html += '<div class="toggle-card"><div><div class="setup-lbl">Audio cues</div>'+
+      '<div style="font-size:11px;color:var(--sub);margin-top:4px">Countdown ticks and an interval tone</div></div>'+
+      '<div class="toggle" style="background:'+(S.audio?'var(--orange)':'var(--line)')+'" onclick="app.toggleAudio()">'+
+      '<div class="knob" style="margin-left:'+(S.audio?'20px':'0')+'"></div></div></div>';
+    html += '<div style="margin-top:16px"><button class="btn btn-secondary btn-block" onclick="app.resetDefaults()">Restore 30 / 10</button></div>';
+    return html;
+  }
+
+  // ── Run / Rest / Done ───────────────────────────────────────────────
+  function renderRun(){
+    var moves = S.custom.map(ex).filter(Boolean);
+    var idx = Math.min(S.idx, Math.max(0, moves.length-1));
+    var cur = moves[idx] || moves[0];
+    var next = moves[idx+1] || cur;
+    var CIRC = 540.35;
+
+    if (S.phase === 'rest'){
+      var total = S.rest, frac = total>0 ? Math.max(0,Math.min(1,S.remaining/total)) : 0;
+      var pct = Math.round(((idx+1)/Math.max(1,moves.length))*100);
+      var html = '<div class="run rest">';
+      html += '<div class="run-head"><div class="eyebrow" style="color:var(--orange)">Rest</div>'+
+        '<div onclick="app.endWorkout()" style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);cursor:pointer">End</div></div>';
+      html += '<div class="run-bar"><div class="track"></div><div class="fill" style="width:'+pct+'%"></div></div>';
+      html += '<div class="run-ring"><svg width="204" height="204" viewBox="0 0 200 200">'+
+        '<circle cx="100" cy="100" r="86" fill="none" stroke="var(--line)" stroke-width="6"></circle>'+
+        '<circle cx="100" cy="100" r="86" fill="none" stroke="var(--navy)" stroke-width="6" stroke-dasharray="'+CIRC+'" stroke-dashoffset="'+(CIRC*(1-frac))+'" transform="rotate(-90 100 100)"></circle></svg>'+
+        '<div style="position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px">'+
+        '<div class="num">'+S.remaining+'</div><div class="lbl" style="color:var(--sub)">seconds</div></div></div>';
+      html += '<div style="border-top:1px solid var(--line);padding-top:16px">'+
+        '<div style="font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--sub)">Next up</div>'+
+        '<div class="next-name">'+next.name+'</div>'+
+        '<div style="display:flex;gap:10px;margin-top:14px">'+
+        '<button class="btn btn-primary" style="flex:1" onclick="app.skipPhase()">Skip rest</button>'+
+        '<button class="btn btn-secondary" onclick="app.togglePause()">'+(S.running?'Pause':'Resume')+'</button></div></div>';
+      html += '</div>';
+      return html;
+    }
+
+    var total2 = S.phase==='lead' ? Math.max(1,S.lead) : S.work;
+    var frac2 = total2>0 ? Math.max(0,Math.min(1,S.remaining/total2)) : 0;
+    var pct2 = Math.round(((idx+(S.phase==='rest'?1:0))/Math.max(1,moves.length))*100);
+    var phaseLabel = S.phase==='lead' ? 'Get ready' : 'Move '+(idx+1)+' of '+moves.length;
+    var cue = S.phase==='lead' ? 'Starting in a moment — get into position.' : ((cur.ins&&cur.ins[0]) || '');
+    var html2 = '<div class="run work">';
+    html2 += '<div class="run-head"><div class="eyebrow">'+phaseLabel+'</div>'+
+      '<div onclick="app.endWorkout()" style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#C8CBD2;cursor:pointer">End</div></div>';
+    html2 += '<div class="run-bar"><div class="track"></div><div class="fill" style="width:'+pct2+'%"></div></div>';
+    html2 += '<div class="move-name">'+cur.name+'</div><div class="move-cue">'+cue+'</div>';
+    html2 += '<div class="run-thumb">'+demoHtml(cur)+'</div>';
+    html2 += '<div class="run-ring"><svg width="180" height="180" viewBox="0 0 200 200">'+
+      '<circle cx="100" cy="100" r="86" fill="none" stroke="rgba(200,203,210,.22)" stroke-width="6"></circle>'+
+      '<circle cx="100" cy="100" r="86" fill="none" stroke="var(--orange)" stroke-width="6" stroke-dasharray="'+CIRC+'" stroke-dashoffset="'+(CIRC*(1-frac2))+'" transform="rotate(-90 100 100)"></circle></svg>'+
+      '<div style="position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px">'+
+      '<div class="num">'+S.remaining+'</div><div class="lbl" style="color:var(--tan)">seconds</div></div></div>';
+    html2 += '<div class="run-actions"><button class="btn btn-accent" onclick="app.togglePause()">'+(S.running?'Pause':'Resume')+'</button>'+
+      '<button class="btn btn-ghost-dark" onclick="app.skipPhase()">Skip</button></div>';
+    html2 += '</div>';
+    return html2;
+  }
+
+  function renderDone(){
+    var moves = (S.custom||[]).map(ex).filter(Boolean);
+    var html = '<div class="done">'+
+      '<div style="position:relative">'+
+      '<div style="color:var(--orange);font-size:18px;margin-bottom:12px">★</div>'+
+      '<div class="eyebrow" style="color:var(--tan)">Circuit complete</div>'+
+      '<h1 style="font-family:Georgia,serif;font-size:27px;margin:10px 0 18px">'+(S.runName||'Circuit')+'</h1>'+
+      '<div class="stat-row" style="background:transparent;border-color:rgba(200,203,210,.3)">'+
+      '<div class="stat"><div class="num" style="color:#fff">'+fmt(S.elapsed)+'</div><div class="lbl" style="color:#C8CBD2">Elapsed</div></div>'+
+      '<div class="stat" style="border-color:rgba(200,203,210,.3)"><div class="num" style="color:#fff">'+moves.length+'</div><div class="lbl" style="color:#C8CBD2">Moves</div></div>'+
+      '<div class="stat" style="border-color:rgba(200,203,210,.3)"><div class="num" style="color:#fff">'+streak()+'</div><div class="lbl" style="color:#C8CBD2">Streak</div></div></div>'+
+      '<div class="body-sm" style="color:#C8CBD2;margin:18px 0 20px">Two or three rounds, three days a week, is enough to hold a base of conditioning.</div>'+
+      '<div style="display:flex;flex-direction:column;gap:10px">'+
+      '<button class="btn btn-accent btn-block" onclick="app.repeatRun()">Another round</button>'+
+      '<button class="btn btn-ghost-dark btn-block" onclick="app.goBrowse()">Back to library</button></div>'+
+      '</div></div>';
+    return html;
+  }
+
+  // ── Public API ──────────────────────────────────────────────────────
+  window.app = {
+    setTab: function(id){ S.tab = id; S.screen='tabs'; render(); },
+    setQuery: function(v){ S.q = v; S.limit = 60; render(); },
+    setFilter: function(field, v){ S[field] = v; S.limit = 60; render(); },
+    loadMore: function(){ S.limit += 60; render(); },
+    openDetail: function(id){ S.detailId = id; S.tab = 'detail'; render(); },
+    toggleCircuit: function(id){
+      var i = S.circuit.indexOf(id);
+      if (i>=0) S.circuit.splice(i,1); else S.circuit.push(id);
+      persist(); render();
+    },
+    removeFromCircuit: function(id){
+      var i = S.circuit.indexOf(id); if (i>=0) S.circuit.splice(i,1);
+      persist(); render();
+    },
+    clearCircuit: function(){ S.circuit = []; persist(); render(); },
+    beginCircuit: function(){ startRun(S.circuit, 'Custom circuit'); },
+    beginClassic: function(){ startRun(CLASSIC_IDS, 'The Classic Circuit'); },
+    repeatRun: function(){ startRun(S.custom, S.runName); },
+    goBrowse: function(){ S.screen='tabs'; S.tab='browse'; S.running=false; render(); },
+    endWorkout: function(){ S.screen='tabs'; S.tab='browse'; S.running=false; render(); },
+    togglePause: function(){ if (!S.running) beep(660,0.08); S.running = !S.running; render(); },
+    skipPhase: function(){ advance(false); render(); },
+    setWork: function(v){ S.work = Number(v); persist(); render(); },
+    setRest: function(v){ S.rest = Number(v); persist(); render(); },
+    setLead: function(v){ S.lead = Number(v); persist(); render(); },
+    toggleAudio: function(){ S.audio = !S.audio; persist(); render(); },
+    resetDefaults: function(){ S.work=30; S.rest=10; S.lead=5; S.audio=true; persist(); render(); }
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
