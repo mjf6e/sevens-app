@@ -208,6 +208,15 @@
     'Bodyweight_Squat','Bench_Dips','Plank','extra-high-knees','Bodyweight_Walking_Lunge',
     'Push_Up_to_Side_Plank','Side_Bridge'];
 
+  var DUMBBELL_IDS = ['Dumbbell_Bench_Press','Dumbbell_Shoulder_Press','One-Arm_Dumbbell_Row',
+    'Dumbbell_Squat','Dumbbell_Alternate_Bicep_Curl','Dumbbell_Tricep_Extension_-Pronated_Grip',
+    'Dumbbell_Lunges','Stiff-Legged_Dumbbell_Deadlift','Dumbbell_Shrug','Dumbbell_Side_Bend',
+    'Split_Squat_with_Dumbbells','Standing_Dumbbell_Calf_Raise'];
+
+  var BODYWEIGHT_IDS = ['Pushups','Bodyweight_Squat','Mountain_Climbers','Glute_Kickback','Plank',
+    'Bodyweight_Walking_Lunge','Bench_Dips','Air_Bike','Step-up_with_Knee_Raise','Side_Bridge',
+    'Superman','extra-calf-raises'];
+
   var BY_ID = {}; EXDATA.forEach(function(e){ BY_ID[e.id] = e; });
   function ex(id){ return BY_ID[id]; }
 
@@ -389,6 +398,15 @@
     html += '<div class="qcard" onclick="app.beginClassic()"><div class="qtag">Quick start</div>'+
       '<div class="qname">The Classic Circuit</div>'+
       '<div class="qmeta">12 moves · '+fmt(circuitSecsFor(CLASSIC_IDS.length))+'</div></div>';
+    html += '<div class="qcard" onclick="app.beginDumbbell()"><div class="qtag">Quick start</div>'+
+      '<div class="qname">Dumbbell Circuit</div>'+
+      '<div class="qmeta">'+DUMBBELL_IDS.length+' moves · '+fmt(circuitSecsFor(DUMBBELL_IDS.length))+'</div></div>';
+    html += '<div class="qcard" onclick="app.beginBodyweight()"><div class="qtag">Quick start</div>'+
+      '<div class="qname">Bodyweight Circuit</div>'+
+      '<div class="qmeta">'+BODYWEIGHT_IDS.length+' moves · '+fmt(circuitSecsFor(BODYWEIGHT_IDS.length))+'</div></div>';
+    html += '<div class="qcard" onclick="app.setTab(\'circuit\')"><div class="qtag">Build your own</div>'+
+      '<div class="qname">Custom Circuit</div>'+
+      '<div class="qmeta">'+(S.circuit.length ? S.circuit.length+' moves added' : 'Pick your own moves')+'</div></div>';
     html += '</div>';
 
     html += '<input class="search" placeholder="Search exercises…" value="'+escAttr(S.q)+'" oninput="app.setQuery(this.value)">';
@@ -636,6 +654,8 @@
     clearCircuit: function(){ S.circuit = []; persist(); render(); },
     beginCircuit: function(){ startRun(S.circuit, 'Custom circuit'); },
     beginClassic: function(){ startRun(CLASSIC_IDS, 'The Classic Circuit'); },
+    beginDumbbell: function(){ startRun(DUMBBELL_IDS, 'Dumbbell Circuit'); },
+    beginBodyweight: function(){ startRun(BODYWEIGHT_IDS, 'Bodyweight Circuit'); },
     repeatRun: function(){ startRun(S.custom, S.runName); },
     goBrowse: function(){ S.screen='tabs'; S.tab='browse'; S.running=false; render(); },
     endWorkout: function(){ S.screen='tabs'; S.tab='browse'; S.running=false; render(); },
