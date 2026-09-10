@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="theme-color" content="#232D4B">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Fit50s">
 <style>
   :root{
@@ -177,7 +177,7 @@
   .demo.gif img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}
   .demo.none{display:flex;align-items:center;justify-content:center;color:#b7b4ab;font-size:28px}
 
-  .run{min-height:100%;padding:26px 20px 20px;box-sizing:border-box;display:flex;flex-direction:column;
+  .run{min-height:100%;padding:26px 20px 20px;padding-top:calc(26px + env(safe-area-inset-top,0px));box-sizing:border-box;display:flex;flex-direction:column;
     position:relative;overflow:hidden;flex:1}
   .run.work{background:var(--navy);color:#fff}
   .run.rest{background:var(--cream);color:var(--navy)}
@@ -196,7 +196,7 @@
   .run-actions{position:relative;display:flex;gap:10px;margin-top:6px}
   .run-actions .btn{flex:1}
   .next-name{font-family:Georgia,serif;font-size:20px;margin:8px 0 4px;text-wrap:pretty}
-  .done{min-height:100%;padding:30px 20px;box-sizing:border-box;display:flex;flex-direction:column;
+  .done{min-height:100%;padding:30px 20px;padding-top:calc(30px + env(safe-area-inset-top,0px));box-sizing:border-box;display:flex;flex-direction:column;
     justify-content:center;background:var(--navy);color:#fff;position:relative;overflow:hidden;flex:1}
 </style>
 </head>
@@ -350,7 +350,7 @@
     var tabbarEl = document.getElementById('tabbar');
 
     if (S.screen === 'tabs'){
-      screenEl.style.padding = '18px 18px 8px';
+      screenEl.style.padding = 'calc(18px + env(safe-area-inset-top,0px)) 18px 8px';
       tabbarEl.style.display = '';
       screenEl.innerHTML = renderTabs();
       tabbarEl.innerHTML = renderTabbar();
