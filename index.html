@@ -393,7 +393,7 @@
 
     html += '<input class="search" placeholder="Search exercises…" value="'+escAttr(S.q)+'" oninput="app.setQuery(this.value)">';
     html += '<div class="sel-row">';
-    html += selectHtml('fCat', S.fCat, ['All categories'].concat(CATS_LIST.map(cap)), ['',''].concat(CATS_LIST).slice(0));
+    html += selectHtml('fCat', S.fCat, ['All categories'].concat(CATS_LIST.map(cap)), [''].concat(CATS_LIST));
     html += selectHtml('fEq', S.fEq, ['All equipment'].concat(EQ_LIST.map(cap)), [''].concat(EQ_LIST));
     html += selectHtml('fLvl', S.fLvl, ['All levels'].concat(LVL_LIST.map(cap)), [''].concat(LVL_LIST));
     html += selectHtml('fMus', S.fMus, ['All muscles'].concat(MUS_LIST.map(cap)), [''].concat(MUS_LIST));
