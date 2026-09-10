@@ -238,7 +238,7 @@
     circuit:[], custom:null, catRunning:null,
     idx:0, phase:'lead', remaining:5, running:false, elapsed:0,
     work:30, rest:10, lead:5, audio:true,
-    history:[]
+    history:[], saved:[], saveName:''
   };
   (function loadSaved(){
     var saved = null;
@@ -249,11 +249,12 @@
       S.audio = saved.audio !== false;
       S.history = Array.isArray(saved.history) ? saved.history : [];
       S.circuit = Array.isArray(saved.circuit) ? saved.circuit : [];
+      S.saved = Array.isArray(saved.saved) ? saved.saved : [];
     }
   })();
   function persist(){
     try { localStorage.setItem('sevens.v2', JSON.stringify(
-      {work:S.work, rest:S.rest, lead:S.lead, audio:S.audio, history:S.history, circuit:S.circuit})); } catch(e){}
+      {work:S.work, rest:S.rest, lead:S.lead, audio:S.audio, history:S.history, circuit:S.circuit, saved:S.saved})); } catch(e){}
   }
 
   function circuitMoves(){
@@ -453,6 +454,7 @@
     return '<select class="mini" onchange="app.setFilter(\''+field+'\', this.value)">'+opts+'</select>';
   }
   function escAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+  function escText(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   // ── Detail ──────────────────────────────────────────────────────────
   function renderDetail(){
@@ -502,22 +504,38 @@
     if (S.circuit.length === 0){
       html += '<div class="body-sm">Nothing added yet. Browse the library and tap "Add to circuit" on any move.</div>';
       html += '<div style="margin-top:14px"><button class="btn btn-secondary btn-block" onclick="app.setTab(\'browse\')">Go to Browse</button></div>';
-      return html;
+    } else {
+      html += '<div class="body-sm">'+S.circuit.length+' moves · '+fmt(circuitSecsFor(S.circuit.length))+' at your current intervals.</div>';
+      html += '<div style="margin-top:10px">';
+      S.circuit.forEach(function(id,i){
+        var e = ex(id); if (!e) return;
+        html += '<div class="circuit-item"><div class="num">'+(i+1)+'</div>'+
+          '<div class="thumb-sm">'+(e.img===-1?'<img src="assets/gifs/'+e.id+'.gif" alt="">':(e.img>=1?'<img src="assets/photos/'+e.id+'-0.jpg" alt="">':''))+'</div>'+
+          '<div class="info"><div class="name">'+e.name+'</div></div>'+
+          '<div class="rm" onclick="app.removeFromCircuit(\''+id+'\')">Remove</div></div>';
+      });
+      html += '</div>';
+      html += '<div style="display:flex;gap:8px;margin-top:14px">'+
+        '<input class="search" style="height:38px;flex:1" placeholder="Name this circuit…" value="'+escAttr(S.saveName)+'" oninput="app.setSaveName(this.value)">'+
+        '<button class="btn btn-secondary" style="height:38px" onclick="app.saveCircuit()">Save</button></div>';
+      html += '<div class="build-bar"><div style="flex:1"><div class="count">'+S.circuit.length+' moves</div>'+
+        '<div class="time">'+fmt(circuitSecsFor(S.circuit.length))+' total</div></div>'+
+        '<div class="clear" onclick="app.clearCircuit()">Clear</div>'+
+        '<button class="btn btn-accent" style="height:38px" onclick="app.beginCircuit()">Start</button></div>';
     }
-    html += '<div class="body-sm">'+S.circuit.length+' moves · '+fmt(circuitSecsFor(S.circuit.length))+' at your current intervals.</div>';
-    html += '<div style="margin-top:10px">';
-    S.circuit.forEach(function(id,i){
-      var e = ex(id); if (!e) return;
-      html += '<div class="circuit-item"><div class="num">'+(i+1)+'</div>'+
-        '<div class="thumb-sm">'+(e.img===-1?'<img src="assets/gifs/'+e.id+'.gif" alt="">':(e.img>=1?'<img src="assets/photos/'+e.id+'-0.jpg" alt="">':''))+'</div>'+
-        '<div class="info"><div class="name">'+e.name+'</div></div>'+
-        '<div class="rm" onclick="app.removeFromCircuit(\''+id+'\')">Remove</div></div>';
-    });
-    html += '</div>';
-    html += '<div class="build-bar"><div style="flex:1"><div class="count">'+S.circuit.length+' moves</div>'+
-      '<div class="time">'+fmt(circuitSecsFor(S.circuit.length))+' total</div></div>'+
-      '<div class="clear" onclick="app.clearCircuit()">Clear</div>'+
-      '<button class="btn btn-accent" style="height:38px" onclick="app.beginCircuit()">Start</button></div>';
+
+    if (S.saved.length){
+      html += '<div style="margin-top:28px">';
+      html += '<div style="font-size:9.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--sub);padding-bottom:6px">Saved circuits</div>';
+      S.saved.forEach(function(sc){
+        html += '<div class="hist-row"><div><div class="name">'+escText(sc.name)+'</div>'+
+          '<div class="meta">'+sc.ids.length+' moves · '+fmt(circuitSecsFor(sc.ids.length))+'</div></div>'+
+          '<div style="display:flex;gap:14px;align-items:center">'+
+          '<button class="btn btn-accent" style="height:32px;padding:0 14px;font-size:9px" onclick="app.startSaved(\''+sc.id+'\')">Start</button>'+
+          '<div class="rm" onclick="app.deleteSaved(\''+sc.id+'\')">Delete</div></div></div>';
+      });
+      html += '</div>';
+    }
     return html;
   }
 
@@ -652,6 +670,23 @@
       persist(); render();
     },
     clearCircuit: function(){ S.circuit = []; persist(); render(); },
+    setSaveName: function(v){ S.saveName = v; render(); },
+    saveCircuit: function(){
+      if (!S.circuit.length) return;
+      var name = (S.saveName||'').trim() || ('My Circuit '+(S.saved.length+1));
+      var id = 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      S.saved = [{id:id, name:name, ids:S.circuit.slice()}].concat(S.saved);
+      S.saveName = '';
+      persist(); render();
+    },
+    startSaved: function(id){
+      var sc = S.saved.filter(function(s){return s.id===id;})[0];
+      if (sc) startRun(sc.ids, sc.name);
+    },
+    deleteSaved: function(id){
+      S.saved = S.saved.filter(function(s){return s.id!==id;});
+      persist(); render();
+    },
     beginCircuit: function(){ startRun(S.circuit, 'Custom circuit'); },
     beginClassic: function(){ startRun(CLASSIC_IDS, 'The Classic Circuit'); },
     beginDumbbell: function(){ startRun(DUMBBELL_IDS, 'Dumbbell Circuit'); },
